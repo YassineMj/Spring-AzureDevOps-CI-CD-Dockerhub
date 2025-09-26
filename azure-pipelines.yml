@@ -1,0 +1,70 @@
+trigger:
+  branches:
+    include:
+      - main   # déclenche le pipeline quand on pousse sur main
+
+pool:
+  name: my-self-hosted-pool
+
+variables:
+  # Nom de l’image Docker
+  imageName: "demo-spring-ci"
+  dockerHubService: "dockerHubConnection"   # Service connection créé dans Azure DevOps
+  dockerHubNamespace: "yassine580"   # ton compte DockerHub
+
+stages:
+  # 1️⃣ Build & Unit Tests
+  - stage: BuildAndTest
+    displayName: "Build & Unit Tests"
+    jobs:
+      - job: MavenBuild
+        displayName: "Compile & Run Unit Tests"
+        steps:
+          - task: Maven@4
+            inputs:
+              mavenPomFile: "pom.xml"
+              goals: "clean install"
+              options: "-DskipIntegrationTests=true" # run only unit tests
+
+  # 2️⃣ Integration Tests
+  - stage: IntegrationTests
+    displayName: "Integration Tests"
+    dependsOn: BuildAndTest
+    jobs:
+      - job: RunIntegrationTests
+        displayName: "Run Integration Tests"
+        steps:
+          - script: mvn verify -Pintegration-tests
+            displayName: "Run Integration Tests Profile"
+
+  # 3️⃣ Build & Push Docker Image
+  - stage: DockerBuild
+    displayName: "Build & Push Docker Image"
+    dependsOn: IntegrationTests
+    jobs:
+      - job: BuildDocker
+        steps:
+          - task: Docker@2
+            displayName: "Build Docker image"
+            inputs:
+              command: buildAndPush
+              repository: "$(dockerHubNamespace)/$(imageName)"
+              dockerfile: "Dockerfile"
+              containerRegistry: "$(dockerHubService)"
+              tags: |
+                $(Build.BuildId)
+                latest
+
+  # 4️⃣ Deploy (staging server par ex.)
+  - stage: Deploy
+    displayName: "Deploy to Staging"
+    dependsOn: DockerBuild
+    jobs:
+      - job: DeployApp
+        steps:
+          - script: |
+              echo "Pull image from DockerHub"
+              docker pull $(dockerHubNamespace)/$(imageName):latest
+              echo "Run container on staging server"
+              docker run -d -p 8080:8080 --name demo-app $(dockerHubNamespace)/$(imageName):latest
+            displayName: "Deploy to Staging"
