@@ -44,8 +44,16 @@ stages:
     jobs:
       - job: BuildDocker
         steps:
+          # Login DockerHub
           - task: Docker@2
-            displayName: "Build Docker image"
+            displayName: "Login DockerHub"
+            inputs:
+              command: login
+              containerRegistry: "$(dockerHubService)"   # dockerHubConnection
+
+          # Build + Push
+          - task: Docker@2
+            displayName: "Build & Push Docker image"
             inputs:
               command: buildAndPush
               repository: "$(dockerHubNamespace)/$(imageName)"
@@ -54,6 +62,7 @@ stages:
               tags: |
                 $(Build.BuildId)
                 latest
+
 
   # 4️⃣ Deploy (staging server par ex.)
   - stage: Deploy
