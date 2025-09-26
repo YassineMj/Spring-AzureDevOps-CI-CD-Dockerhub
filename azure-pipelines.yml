@@ -66,5 +66,5 @@ stages:
               echo "Pull image from DockerHub"
               docker pull $(dockerHubNamespace)/$(imageName):latest
               echo "Run container on staging server"
-              docker run -d -p 8080:8080 --name demo-app $(dockerHubNamespace)/$(imageName):latest
+              docker run -d -p 8082:8082 --name demo-app $(dockerHubNamespace)/$(imageName):latest
             displayName: "Deploy to Staging"
