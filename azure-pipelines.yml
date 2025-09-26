@@ -10,7 +10,7 @@ variables:
   # Nom de l’image Docker
   imageName: "demo-spring-ci"
   dockerHubService: "dockerHubConnection"   # Service connection créé dans Azure DevOps
-  dockerHubNamespace: "yassine580"   # ton compte DockerHub
+  dockerHubNamespace: "yassine580"   # mon compte DockerHub
 
 stages:
   # 1️⃣ Build & Unit Tests
